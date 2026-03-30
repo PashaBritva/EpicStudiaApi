@@ -4,7 +4,7 @@ const logger = require('morgan');
 
 const indexRouter = require('./routes/index');
 const moviesRouter = require('./routes/movies');
-const usersRouter = require('./routes/users');
+const usersRouter = require('./routes/users').router;
 const searchRouter = require('./routes/search');
 
 const app = express();

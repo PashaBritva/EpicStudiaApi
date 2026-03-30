@@ -31,6 +31,17 @@ db.connect((err) => {
       rating INT DEFAULT 0
     )`);
 
+    db.query(`CREATE TABLE IF NOT EXISTS ratings (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      movieId INT,
+      userId INT,
+      rating INT,
+      UNIQUE KEY unique_movie_user (movieId, userId),
+      FOREIGN KEY (movieId) REFERENCES movies(id) ON DELETE CASCADE
+    )`, (err) => {
+      if (err) console.error('Ошибка создания таблицы ratings:', err.message);
+    });
+
     db.query(`CREATE TABLE IF NOT EXISTS comments (
       id INT AUTO_INCREMENT PRIMARY KEY,
       movieId INT,
