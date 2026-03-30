@@ -116,7 +116,7 @@ router.get('/:id/comments', authenticateToken, (req, res) => {
 router.get('/:id/ratings', authenticateToken, (req, res) => {
     db.query('SELECT rating FROM ratings WHERE movieId = ?', [req.params.id], (err, results) => {
         if (err) return res.status(500).send(`Ошибка получения рейтинга: ${err}`)
-        return res.status(201).json(results[0]);
+        return res.status(200).json(results);
     });
 })
 
