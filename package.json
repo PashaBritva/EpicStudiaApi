@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "node ./bin/www",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node test/app.test.js",
     "lint": "echo \"No linter configured\""
   },
   "dependencies": {

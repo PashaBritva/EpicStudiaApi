@@ -1,77 +1,12 @@
 ```
-# Dependencies
 node_modules/
-
-# Environment
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 .env
 .env.local
-.env.*
-
-# Logs
 *.log
-
-# Coverage
 coverage/
-htmlcov/
-.coverage
-
-# Build outputs
-dist/
-build/
-target/
-
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-*.so
-*.egg-info/
-.eggs/
-
-# Virtual environments
-venv/
-.venv/
-env/
-ENV/
-
-# Testing
-.pytest_cache/
-.mypy_cache/
-.tox/
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Compressed
-*.zip
-*.gz
-*.tar
-*.tgz
-*.bz2
-*.xz
-*.7z
-*.rar
-*.zst
-*.lz4
-*.lzh
-*.cab
-*.arj
-*.rpm
-*.deb
-*.Z
-*.lz
-*.lzo
-*.tar.gz
-*.tar.bz2
-*.tar.xz
-*.tar.zst
+.nyc_output/
+test-report.xml
 ```
