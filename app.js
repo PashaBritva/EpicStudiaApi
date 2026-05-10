@@ -6,6 +6,7 @@ const indexRouter = require('./routes/index');
 const moviesRouter = require('./routes/movies');
 const usersRouter = require('./routes/users').router;
 const searchRouter = require('./routes/search');
+const liveRouter = require('./routes/live');
 
 const app = express();
 const api = '/api/v1';
@@ -39,6 +40,7 @@ app.use(`${api}/`, indexRouter);
 app.use(`${api}/movies`, moviesRouter);
 app.use(`${api}/search`, searchRouter);
 app.use(`${api}/user`, usersRouter);
+app.use(`${api}/live`, liveRouter);
 
 app.use((err, req, res, next) => {
   res.locals.message = err.message;

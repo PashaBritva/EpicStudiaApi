@@ -49,6 +49,16 @@ db.connect((err) => {
       text TEXT,
       FOREIGN KEY (movieId) REFERENCES movies(id) ON DELETE CASCADE
     )`);
+
+    db.query(`CREATE TABLE IF NOT EXISTS livestreams (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      title VARCHAR(255),
+      description TEXT,
+      streamer VARCHAR(255),
+      status VARCHAR(50) DEFAULT 'upcoming',
+      viewerCount INT DEFAULT 0,
+      createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`);
   }
 });
 
