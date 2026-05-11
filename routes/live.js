@@ -1,6 +1,6 @@
 const express = require('express');
 const { db } = require('../bin/db');
-const { authenticateToken, checkAdmin } = require('./users');
+const { authenticateToken, checkStreamer } = require('./users');
 require('dotenv').config();
 
 const router = express.Router();
@@ -14,7 +14,7 @@ router.get('/', authenticateToken, (req, res) => {
     db.query(
         'SELECT id, title, description, streamer, status, viewerCount FROM livestreams ORDER BY createdAt DESC',
         (err, results) => {
-            if (err) return res.status(500).send('Ошибка при получении трансляций');
+            if (err) return res.status(500).json({ message: 'Ошибка при получении трансляций' });
             res.status(200).json(results);
         }
     );
@@ -25,39 +25,54 @@ router.get('/:id', authenticateToken, (req, res) => {
         'SELECT id, title, description, streamer, status, viewerCount FROM livestreams WHERE id = ?',
         [req.params.id],
         (err, results) => {
-            if (err) return res.status(500).send('Ошибка при получении трансляции');
-            if (results.length === 0) return res.status(404).send('Трансляция не найдена');
+            if (err) return res.status(500).json({ message: 'Ошибка при получении трансляции' });
+            if (results.length === 0) return res.status(404).json({ message: 'Трансляция не найдена' });
             res.status(200).json(results[0]);
         }
     );
 });
 
-router.post('/', authenticateToken, checkAdmin, (req, res) => {
-    const { title, description, streamer } = req.body;
-    if (!title) return res.status(400).send('Недостаточно данных');
+router.post('/', authenticateToken, checkStreamer, (req, res) => {
+    const { title, description } = req.body;
+    if (!title) return res.status(400).json({ message: 'Недостаточно данных' });
 
     db.query(
         'INSERT INTO livestreams (title, description, streamer, status) VALUES (?, ?, ?, ?)',
-        [title, description || '', streamer || 'Неизвестный', 'upcoming'],
+        [title, description || '', req.user.username, 'upcoming'],
         (err, results) => {
-            if (err) return res.status(500).send('Ошибка при создании трансляции');
+            if (err) return res.status(500).json({ message: 'Ошибка при создании трансляции' });
             res.status(201).json({ message: 'Трансляция создана', id: results.insertId });
         }
     );
 });
 
-router.patch('/:id/status', authenticateToken, checkAdmin, (req, res) => {
+router.patch('/:id/status', authenticateToken, checkStreamer, (req, res) => {
     const { status } = req.body;
     if (!status || !['live', 'upcoming', 'ended'].includes(status)) {
-        return res.status(400).send('Некорректный статус');
+        return res.status(400).json({ message: 'Некорректный статус' });
     }
 
     db.query(
-        'UPDATE livestreams SET status = ? WHERE id = ?',
-        [status, req.params.id],
-        (err) => {
-            if (err) return res.status(500).send('Ошибка при обновлении статуса');
-            res.status(200).send('Статус обновлён');
+        'SELECT streamer FROM livestreams WHERE id = ?',
+        [req.params.id],
+        (selectErr, results) => {
+            if (selectErr) return res.status(500).json({ message: 'Ошибка при получении трансляции' });
+            if (results.length === 0) return res.status(404).json({ message: 'Трансляция не найдена' });
+
+            const isAdminLike = ['admin', 'owner'].includes(req.user.role);
+            const isOwnerStream = results[0].streamer === req.user.username;
+            if (!isAdminLike && !isOwnerStream) {
+                return res.status(403).json({ message: 'Можно управлять только своими трансляциями' });
+            }
+
+            db.query(
+                'UPDATE livestreams SET status = ? WHERE id = ?',
+                [status, req.params.id],
+                (updateErr) => {
+                    if (updateErr) return res.status(500).json({ message: 'Ошибка при обновлении статуса' });
+                    res.status(200).json({ message: 'Статус обновлён' });
+                }
+            );
         }
     );
 });
@@ -67,10 +82,10 @@ router.get('/:id/stream', authenticateToken, (req, res) => {
         'SELECT status FROM livestreams WHERE id = ?',
         [req.params.id],
         (err, results) => {
-            if (err) return res.status(500).send('Ошибка при проверке трансляции');
-            if (results.length === 0) return res.status(404).send('Трансляция не найдена');
+            if (err) return res.status(500).json({ message: 'Ошибка при проверке трансляции' });
+            if (results.length === 0) return res.status(404).json({ message: 'Трансляция не найдена' });
             if (results[0].status !== 'live') {
-                return res.status(403).send('Трансляция недоступна');
+                return res.status(403).json({ message: 'Трансляция недоступна' });
             }
             res.status(200).json({ url: `${process.env.STREAM_URL || 'rtmp://localhost/live'}/${req.params.id}` });
         }

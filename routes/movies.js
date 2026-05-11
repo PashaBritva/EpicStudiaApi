@@ -2,8 +2,8 @@ var express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const { db } = require('../bin/db');
-const fs = require('fs');
 const path = require('path');
+const { streamVideoFile } = require('../services/streaming');
 const { authenticateToken, checkAdmin } = require('./users')
 require('dotenv').config();
 
@@ -30,30 +30,7 @@ router.use(express.json());
 router.get('/:id/stream', authenticateToken, (req, res) => {
     const movieId = req.params.id;
     const filePath = path.join(__dirname, '..', `uploads/${movieId}/${movieId}.mp4`);
-
-    fs.stat(filePath, (err, stats) => {
-        if (err) return res.status(404).send('Файл не найден');
-        let { range } = req.headers;
-        if (!range) range = 'bytes=0-';
-
-        const parts = range.replace(/bytes=/, '').split('-');
-        const start = parseInt(parts[0], 10);
-        const end = parts[1] ? parseInt(parts[1], 10) : stats.size - 1;
-
-        if (start >= stats.size) return res.status(416).send('Запрос за пределами размера файла');
-
-        const contentLength = end - start + 1;
-        res.writeHead(206, {
-            'Content-Range': `bytes ${start}-${end}/${stats.size}`,
-            'Accept-Ranges': 'bytes',
-            'Content-Length': contentLength,
-            'Content-Type': 'video/mp4',
-            'Cache-Control': 'no-store',
-            'Content-Disposition': 'inline'
-        });
-
-        fs.createReadStream(filePath, { start, end }).pipe(res);
-    });
+    streamVideoFile(filePath, req, res);
 });
 
 router.post('/upload', authenticateToken, checkAdmin, upload.single('fullMovie'), (req, res) => {

@@ -40,7 +40,7 @@ async function loginToken(req, res) {
         const user = rows[0];
         const validPass = await bcrypt.compare(password, user.password);
         if (!validPass) return res.status(400).send('Неверный логин или пароль');
-        const token = jwt.sign({ id: user.id, role: user.role }, SECRET_KEY, { expiresIn: '7d' });
+        const token = jwt.sign({ id: user.id, role: user.role, username: user.username }, SECRET_KEY, { expiresIn: '7d' });
         res.cookie('token', token, {
             httpOnly: true,
             secure: true,
@@ -112,18 +112,29 @@ router.post('/logout', async (req, res) => {
 })
 
 function authenticateToken(req, res, next) {
-    const token = req.cookies.token;
-    if (!token) return res.status(401).send('Доступ запрещён');
+    const authHeader = req.headers.authorization || '';
+    const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    const token = req.cookies.token || bearerToken;
+
+    if (!token) return res.status(401).json({ message: 'Доступ запрещён' });
     jwt.verify(token, SECRET_KEY, (err, user) => {
-        if (err) return res.status(403).send('Недействительный токен');
+        if (err) return res.status(403).json({ message: 'Недействительный токен' });
         req.user = user;
         next();
     });
 }
 
 function checkAdmin(req, res, next) {
-    if (req.user.role !== 'admin' && req.user.role !== 'owner') return res.status(403).send('Недостаточно прав');
+    if (req.user.role !== 'admin' && req.user.role !== 'owner') return res.status(403).json({ message: 'Недостаточно прав' });
     next();
 }
 
-module.exports = {router, authenticateToken, checkAdmin};
+function checkStreamer(req, res, next) {
+    if (!req.user) return res.status(401).json({ message: 'Не авторизован' });
+    if (!['streamer', 'admin', 'owner'].includes(req.user.role)) {
+        return res.status(403).json({ message: 'Доступ только для стримеров' });
+    }
+    next();
+}
+
+module.exports = {router, authenticateToken, checkAdmin, checkStreamer};
